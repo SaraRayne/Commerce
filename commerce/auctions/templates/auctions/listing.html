@@ -1,0 +1,84 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <h2>{{ listing.title }}</h2>
+    {% if message %}
+        <div>{{ message }}</div>
+    {% endif %}
+    <!--This section displays the basic info about the listing, whether logged in or not-->
+    <img src="{{ listing.photo }}" width="500px">
+    <h4>Description</h4>
+    <p>{{ listing.description }}</p>
+    <div class="listing">
+      Starting Bid: ${{ listing.starting_bid }}
+    </div>
+    <div class="listing">
+      Current Bid: ${{ highest_bid }}
+    </div>
+    <!--Only logged in users can place bid, add/remove from watchlist, and leave a comment-->
+    {% if user.is_authenticated %}
+      {% if active %}
+        <form action="{% url 'bid' listing.id %}" method="post">
+          {% csrf_token %}
+          {{ form }}
+          <input type="submit" class="btn btn-dark" value="Place Bid">
+        </form>
+      {% endif %}
+      <br>
+      {% if watchlist %}
+        <form action="{% url 'watchlist' listing.id %}" method="post">
+          {% csrf_token %}
+          <div class="form-group">
+            <input type="submit" class="btn btn-secondary" name="watchlist" value="Remove from Watchlist">
+          </div>
+        </form>
+      {% else %}
+        <form action="{% url 'watchlist' listing.id %}" method="post">
+          {% csrf_token %}
+          <div class="form-group">
+            <input type="submit" class="btn btn-secondary" name="watchlist" value="Add to Watchlist">
+          </div>
+        </form>
+      {% endif %}
+      <br>
+      <form action="{% url 'comment' listing.id %}" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="comment_text">Leave a Comment</label>
+          <textarea name="comment_text" class="form-control" rows="4" cols="40" placeholder="Type your comment..."></textarea>
+        </div>
+        <div class="form-group">
+          <input type="submit" name="comment" class="btn btn-dark" value="Post">
+        </div>
+        </form>
+    {% endif %}
+    <!--Only the owner has the ability to close the listing, ending the auction-->
+    {% if owner %}
+      {% if active %}
+        <form class="form-group" action="{% url 'close' listing.id %}" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="highest_bid" value="{{ highest_bid }}">
+          <input type="submit" class="btn btn-dark" name="end" value="End Auction">
+        </form>
+      {% endif %}
+    {% endif %}
+    <br>
+    <!--Below displays comments and date of creation for listing-->
+    <h3>Comments</h3>
+    <table class="table">
+      <tr>
+        <th>Comment</th>
+        <th>User</th>
+        <th>Date</th>
+      </tr>
+    {% for comment in comments %}
+        <tr>
+          <td>{{ comment.comment }}</td>
+          <td>{{ comment.commenter }}</td>
+          <td>{{ comment.date }}</td>
+        </tr>
+    {% endfor %}
+    </table>
+    Created {{ listing.date }}
+
+{% endblock %}
